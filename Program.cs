@@ -42,9 +42,15 @@ namespace SheduleBot
 
         static void Bot_OnMessage(object sender, MessageEventArgs e)
         {
+            User current;
             if (usersList.Find(x => x.Id == e.Message.From.Id) == null)
-            {                
-                usersList.Add(new User(e.Message.From.Id));
+            {
+                current = new User(e.Message.From.Id);
+                usersList.Add(current);
+            }
+            else
+            {
+                current = usersList.Find(x => x.Id == e.Message.From.Id);
             }
 
             string command = " ";
@@ -53,22 +59,22 @@ namespace SheduleBot
             {
                 command = e.Message.Text;
             }
-            else if (e.Message.Type == MessageType.Photo && usersList.Find(x => x.Id == e.Message.From.Id).SetShedule == true)
+            else if (e.Message.Type == MessageType.Photo && current.SetShedule == true)
             {
-                usersList.Find(x => x.Id == e.Message.From.Id).Shedule_FileId = e.Message.Photo[2].FileId;
+                current.Shedule_FileId = e.Message.Photo[2].FileId;
                 SendTextMessage(e, "Done! You have new schedule.");
-                usersList.Find(x => x.Id == e.Message.From.Id).SetShedule = false;
+                current.SetShedule = false;
             }
-            else if (e.Message.Type == MessageType.Text && usersList.Find(x => x.Id == e.Message.From.Id).SetTimeline == true)
+            else if (e.Message.Type == MessageType.Text && current.SetTimeline == true)
             {
-                usersList.Find(x => x.Id == e.Message.From.Id).TimeLine.AddRange(e.Message.Text.Split('\n'));
+                current.TimeLine.AddRange(e.Message.Text.Split('\n'));
 
 
                 Parser p = new Parser();
-                List<Business> businessList = p.ParseText(usersList.Find(x => x.Id == e.Message.From.Id).TimeLine);
-                usersList.Find(x => x.Id == e.Message.From.Id).Doings.AddRange(businessList);
+                List<Business> businessList = p.ParseText(current.TimeLine);
+                current.Doings.AddRange(businessList);
                 SendTextMessage(e, "Done! Your timeline is ready to use. Do not miss your business.");
-                usersList.Find(x => x.Id == e.Message.From.Id).SetTimeline = false;
+                current.SetTimeline = false;
             }
             else
             {
@@ -82,17 +88,17 @@ namespace SheduleBot
             }
             else if (command == "/show_schedule" || command == "/show_schedule@YourSchedule_bot")
             {
-                if (usersList.Find(x => x.Id == e.Message.From.Id).Shedule_FileId != null)
+                if (current.Shedule_FileId != null)
                 {
                     string caption = "";
-                    for (int i = 0; i < usersList.Find(x => x.Id == e.Message.From.Id).TimeLine.Count; i++)
+                    for (int i = 0; i < current.TimeLine.Count; i++)
                     {
-                        caption += i+1 + ". " + usersList.Find(x => x.Id == e.Message.From.Id).TimeLine[i] + " \n";
+                        caption += i+1 + ". " + current.TimeLine[i] + " \n";
                     }
 
-                    SendFileMessage(e, usersList.Find(x => x.Id == e.Message.From.Id).Shedule_FileId.ToString(), MessageType.Photo, 
-                        "next: " + usersList.Find(x => x.Id == e.Message.From.Id).Doings.ElementAt(0).Name + " - " +
-                       usersList.Find(x => x.Id == e.Message.From.Id).Doings.ElementAt(0).Weekday + ", " + usersList.Find(x => x.Id == e.Message.From.Id).Doings.ElementAt(0).Time);
+                    SendFileMessage(e, current.Shedule_FileId.ToString(), MessageType.Photo, 
+                        "next: " + current.Doings.ElementAt(0).Name + " - " +
+                       current.Doings.ElementAt(0).Weekday + ", " + current.Doings.ElementAt(0).Time);
                 }
                 else
                 {
@@ -101,12 +107,12 @@ namespace SheduleBot
             }
             else if (command == "/upload_schedule" || command == "/upload_schedule@YourSchedule_bot")
             {
-                usersList.Find(x => x.Id == e.Message.From.Id).SetShedule = true;
+                current.SetShedule = true;
                 SendTextMessage(e, "Please send me photo of your schedule so I remember it.");
             }
             else if (command == "/set_timeline" || command == "/set_timeline@YourSchedule_bot")
             {
-                usersList.Find(x => x.Id == e.Message.From.Id).SetTimeline = true;
+                current.SetTimeline = true;
                 SendTextMessage(e, "Ok. Send me a timeline list of things to do. Please use this format: \n\n" +
                     "thing, weekday, from-to(hh:mm), time to notification (min) \n" +
                     "Lect. Mobile Aps, monday, 17:30-19:00, 30");
